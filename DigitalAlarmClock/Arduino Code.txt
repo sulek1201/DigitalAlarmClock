@@ -1,0 +1,926 @@
+#include <LiquidCrystal.h>
+#define buttonPin 13
+LiquidCrystal lcd(12,11,5,4,3,2);
+
+int buttonPin2 = 10;
+int buttonPin3 = 9;
+int buttonPin4 = 7;
+int buttonState2 = LOW;
+int buttonState3;
+int buttonState4 = LOW;
+int buzzerPin = 8;
+int lm_35=A0;
+
+//boolean buttonState = LOW; 
+int buttonState;
+int programState=0;
+int programState2=0;
+
+const long intervalButton = 3000;
+const long intervalLed = 6000;
+
+long ledMillis = 0;
+long buttonMillis = 0;
+long ledMillis2 = 0;
+long buttonMillis2 = 0;
+
+int pressed=0;  
+ int hour=4;
+ int min=10;
+ int sec=58;
+
+ int al_hour=4;
+ int al_min=14;
+ int al_control = 0;
+ int temp_control = 0;
+ float lm35_okunan_deger;    
+ float analog_sicaklik;  
+ int digital_sicaklik;
+ int active = 0;
+ int PM_control = 0;
+
+void setup()
+{
+  cli(); 
+  TCNT1= 0; 
+  TCCR1A = 0;
+  TCCR1B = 0;
+  TCCR1B |= (1<<WGM12); 
+  TCCR1B |= (1<<CS12)|(1<<CS10); 
+  OCR1A = 15624; ; 
+  TIMSK1 |= (1<<OCIE1A); 
+  
+  lcd.begin(16,4); 
+  sei();
+
+  Serial.begin(9600);
+  pinMode(buttonPin, INPUT);
+  pinMode(buttonPin2, INPUT);
+  pinMode(buttonPin3, INPUT);
+  pinMode(buttonPin4, INPUT);
+  pinMode(buzzerPin, OUTPUT);
+  pinMode(lm_35,INPUT);
+  
+}
+boolean debounceButton2(boolean state)
+{
+  boolean stateNow = digitalRead(buttonPin2);
+  if(state!=stateNow)
+  {
+    delay(10);
+    stateNow = digitalRead(buttonPin2);
+  }
+  return stateNow;
+  
+}
+
+boolean debounceButton(boolean state)
+{
+  boolean stateNow = digitalRead(buttonPin);
+  if(state!=stateNow)
+  {
+    delay(10);
+    stateNow = digitalRead(buttonPin);
+  }
+  return stateNow;
+  
+}
+boolean debounceButton3(boolean state)
+{
+  boolean stateNow = digitalRead(buttonPin3);
+  if(state!=stateNow)
+  {
+    delay(10);
+    stateNow = digitalRead(buttonPin3);
+  }
+  return stateNow;
+  
+}
+
+boolean debounceButton4(boolean state)
+{
+  boolean stateNow = digitalRead(buttonPin4);
+  if(state!=stateNow)
+  {
+    delay(10);
+    stateNow = digitalRead(buttonPin4);
+  }
+  return stateNow;
+  
+}
+void set_temp(){
+
+   buttonState = digitalRead(7);
+if(debounceButton4(buttonState4) == HIGH && buttonState4 == LOW)
+  {
+    if(temp_control == 0){
+      temp_control =1;
+
+      active = 1;
+      }
+
+      else{
+        temp_control = 0;
+
+        active = 1;
+        }
+
+
+    
+    buttonState4 = HIGH;
+  
+  }
+  else if(debounceButton4(buttonState4) == LOW && buttonState4 == HIGH)
+  {
+       buttonState4 = LOW;
+    }
+
+    if(temp_control == 0){
+
+ lm35_okunan_deger= analogRead(lm_35);    
+ analog_sicaklik=(lm35_okunan_deger/1023)*5000;  
+ digital_sicaklik= analog_sicaklik/10;
+    }
+
+    else if (active == 1 &&temp_control == 1){
+      digital_sicaklik = ((digital_sicaklik*1.8) + 32);
+      active = 0;
+      }
+}
+
+
+void setPM_AM(){
+
+   
+if(debounceButton2(buttonState2) == HIGH && buttonState2 == LOW)
+  {
+   if(PM_control == 0){
+      PM_control =1;
+      
+      }
+
+      else{
+        PM_control =0;
+        }
+
+    
+    buttonState2 = HIGH;
+  
+  }
+  else if(debounceButton2(buttonState2) == LOW && buttonState2 == HIGH)
+  {
+       buttonState2 = LOW;
+    }
+
+}
+
+void setAl_min(){
+  
+   while(true){
+ 
+  buttonState2 = digitalRead(10);
+
+lcd.setCursor(0,0);
+if(PM_control == 1){
+  if(hour>=12){
+    lcd.print("PM");
+    }
+  else{
+    lcd.print("AM");
+    }  
+  }
+ else{
+  lcd.print(" ");
+  
+  }
+
+lcd.setCursor(6,1);
+ if(sec<10)lcd.print("0");
+
+lcd.setCursor(7,1);
+if(sec<10)lcd.print(sec);
+lcd.setCursor(6,1);
+if(sec>=10)lcd.print(sec);
+
+lcd.setCursor(3,1);
+ if(min<10)lcd.print("0");
+
+lcd.setCursor(4,1);
+if(min<10)lcd.print(min);
+lcd.setCursor(3,1);
+if(min>=10)lcd.print(min);
+
+lcd.setCursor(5,1);
+lcd.print(":");
+
+lcd.setCursor(0,1);
+ if(hour<10&&PM_control==0)lcd.print("0");
+lcd.setCursor(1,1);
+if(hour<10&&PM_control==0)lcd.print(hour);
+lcd.setCursor(0,1);
+if(hour>=10&&PM_control==0)lcd.print(hour);
+
+
+
+lcd.setCursor(0,1);
+if(hour-12<10 && PM_control==1&&hour-12>0)lcd.print("0");
+lcd.setCursor(1,1);
+if(hour-12<10 && PM_control==1&&hour-12>0)lcd.print(hour-12);
+lcd.setCursor(0,1);
+if(hour-12 >= 10 && PM_control==1 &&hour-12>0)lcd.print(hour-12);
+
+
+lcd.setCursor(0,1);
+if(hour<10 && PM_control==1&&hour-12<0 &&hour != 0)lcd.print("0");
+lcd.setCursor(1,1);
+if(hour<10 && PM_control==1&&hour-12<0&&hour != 0)lcd.print(hour);
+lcd.setCursor(0,1);
+if(hour >= 10 && PM_control==1 &&hour-12<=0)lcd.print(hour);
+lcd.setCursor(0,1);
+if(hour<10 && PM_control==1&&hour-12<0&&hour==0)lcd.print(12);
+
+lcd.setCursor(2,1);
+lcd.print(":");
+
+lcd.setCursor(0,3);
+ lcd.print("Alarm ");
+
+ lcd.setCursor(10,3);
+ if(al_min<10)lcd.print("0");
+
+lcd.setCursor(11,3);
+if(al_min<10)lcd.print(al_min);
+lcd.setCursor(10,3);
+if(al_min>=10)lcd.print(al_min);
+
+
+
+lcd.setCursor(7,3);
+ if(al_hour<10)lcd.print("0");
+
+lcd.setCursor(8,3);
+if(al_hour<10)lcd.print(al_hour);
+lcd.setCursor(7,3);
+if(al_hour>=10)lcd.print(al_hour);
+
+lcd.setCursor(9,3);
+lcd.print(":");
+lcd.setCursor(11,3);
+lcd.cursor();
+delay(90);
+lcd.setCursor(11, 3);
+lcd.noCursor();
+delay(90);
+
+
+if(debounceButton2(buttonState2) == HIGH && buttonState2 == LOW)
+  {
+    al_min++;
+    buttonState2 = HIGH;
+  }
+  else if(debounceButton2(buttonState2) == LOW && buttonState2 == HIGH)
+  {
+       buttonState2 = LOW;
+       
+  }
+
+  if(debounceButton3(buttonState3) == HIGH && buttonState3 == LOW)
+  {
+    
+    buttonState3 = HIGH;
+    break;
+  }
+  else if(debounceButton3(buttonState3) == LOW && buttonState3 == HIGH)
+  {
+       buttonState3 = LOW;
+    }
+      
+
+ }
+ 
+  }
+
+
+  void setAl_hour(){
+    
+    while(true){
+
+  buttonState2 = digitalRead(10);
+lcd.setCursor(0,0);
+if(PM_control == 1){
+  if(hour>=12){
+    lcd.print("PM");
+    }
+  else{
+    lcd.print("AM");
+    }  
+  }
+ else{
+  lcd.print(" ");
+  
+  }
+lcd.setCursor(6,1);
+ if(sec<10)lcd.print("0");
+
+lcd.setCursor(7,1);
+if(sec<10)lcd.print(sec);
+lcd.setCursor(6,1);
+if(sec>=10)lcd.print(sec);
+
+lcd.setCursor(3,1);
+ if(min<10)lcd.print("0");
+
+lcd.setCursor(4,1);
+if(min<10)lcd.print(min);
+lcd.setCursor(3,1);
+if(min>=10)lcd.print(min);
+
+lcd.setCursor(5,1);
+lcd.print(":");
+
+lcd.setCursor(0,1);
+ if(hour<10&&PM_control==0)lcd.print("0");
+lcd.setCursor(1,1);
+if(hour<10&&PM_control==0)lcd.print(hour);
+lcd.setCursor(0,1);
+if(hour>=10&&PM_control==0)lcd.print(hour);
+
+
+
+lcd.setCursor(0,1);
+if(hour-12<10 && PM_control==1&&hour-12>0)lcd.print("0");
+lcd.setCursor(1,1);
+if(hour-12<10 && PM_control==1&&hour-12>0)lcd.print(hour-12);
+lcd.setCursor(0,1);
+if(hour-12 >= 10 && PM_control==1 &&hour-12>0)lcd.print(hour-12);
+
+
+lcd.setCursor(0,1);
+if(hour<10 && PM_control==1&&hour-12<0 &&hour != 0)lcd.print("0");
+lcd.setCursor(1,1);
+if(hour<10 && PM_control==1&&hour-12<0&&hour != 0)lcd.print(hour);
+lcd.setCursor(0,1);
+if(hour >= 10 && PM_control==1 &&hour-12<=0)lcd.print(hour);
+lcd.setCursor(0,1);
+if(hour<10 && PM_control==1&&hour-12<0&&hour==0)lcd.print(12);
+
+lcd.setCursor(2,1);
+lcd.print(":");
+  ///////////////////
+lcd.setCursor(0,3);
+ lcd.print("Alarm ");
+
+ lcd.setCursor(10,3);
+ if(al_min<10)lcd.print("0");
+
+lcd.setCursor(11,3);
+if(al_min<10)lcd.print(al_min);
+lcd.setCursor(10,3);
+if(al_min>=10)lcd.print(al_min);
+
+
+
+lcd.setCursor(7,3);
+ if(al_hour<10)lcd.print("0");
+
+lcd.setCursor(8,3);
+if(al_hour<10)lcd.print(al_hour);
+lcd.setCursor(7,3);
+if(al_hour>=10)lcd.print(al_hour);
+
+lcd.setCursor(9,3);
+lcd.print(":");
+lcd.setCursor(8,3);
+lcd.cursor();
+delay(90);
+lcd.setCursor(8, 3);
+lcd.noCursor();
+delay(90);
+
+
+if(debounceButton2(buttonState2) == HIGH && buttonState2 == LOW)
+  {
+    al_hour++;
+    buttonState = HIGH;
+  }
+  else if(debounceButton2(buttonState2) == LOW && buttonState2 == HIGH)
+  {
+       buttonState2 = LOW;
+       
+  }
+      
+    if(debounceButton3(buttonState3) == HIGH && buttonState3 == LOW)
+  {
+    
+    buttonState3 = HIGH;
+    break;
+  }
+  else if(debounceButton3(buttonState3) == LOW && buttonState3 == HIGH)
+  {
+       buttonState3 = LOW;
+    }
+
+    
+ }
+    
+    
+    }
+
+
+void setMin(){
+  
+  while(true){
+ 
+  buttonState2 = digitalRead(10);
+
+  if(debounceButton2(buttonState2) == HIGH && buttonState2 == LOW)
+  {
+    min++;
+    buttonState2 = HIGH;
+  }
+  else if(debounceButton2(buttonState2) == LOW && buttonState2 == HIGH)
+  {
+       buttonState2 = LOW;
+       
+  }
+  
+lcd.setCursor(0,0);
+if(PM_control == 1){
+  if(hour>=12){
+    lcd.print("PM");
+    }
+  else{
+    lcd.print("AM");
+    }  
+  }
+ else{
+  lcd.print(" ");
+  
+  }
+lcd.setCursor(6,1);
+ if(sec<10)lcd.print("0");
+
+lcd.setCursor(7,1);
+if(sec<10)lcd.print(sec);
+lcd.setCursor(6,1);
+if(sec>=10)lcd.print(sec);
+
+lcd.setCursor(3,1);
+ if(min<10)lcd.print("0");
+
+lcd.setCursor(4,1);
+if(min<10)lcd.print(min);
+lcd.setCursor(3,1);
+if(min>=10)lcd.print(min);
+
+lcd.setCursor(5,1);
+lcd.print(":");
+
+lcd.setCursor(0,1);
+ if(hour<10&&PM_control==0)lcd.print("0");
+lcd.setCursor(1,1);
+if(hour<10&&PM_control==0)lcd.print(hour);
+lcd.setCursor(0,1);
+if(hour>=10&&PM_control==0)lcd.print(hour);
+
+
+
+lcd.setCursor(0,1);
+if(hour-12<10 && PM_control==1&&hour-12>0)lcd.print("0");
+lcd.setCursor(1,1);
+if(hour-12<10 && PM_control==1&&hour-12>0)lcd.print(hour-12);
+lcd.setCursor(0,1);
+if(hour-12 >= 10 && PM_control==1 &&hour-12>0)lcd.print(hour-12);
+
+
+lcd.setCursor(0,1);
+if(hour<10 && PM_control==1&&hour-12<0 &&hour != 0)lcd.print("0");
+lcd.setCursor(1,1);
+if(hour<10 && PM_control==1&&hour-12<0&&hour != 0)lcd.print(hour);
+lcd.setCursor(0,1);
+if(hour >= 10 && PM_control==1 &&hour-12<=0)lcd.print(hour);
+lcd.setCursor(0,1);
+if(hour<10 && PM_control==1&&hour-12<0&&hour==0)lcd.print(12);
+
+lcd.setCursor(2,1);
+lcd.print(":");
+lcd.setCursor(4,1);
+lcd.cursor();
+delay(90);
+lcd.setCursor(4, 1);
+lcd.noCursor();
+delay(90);
+
+
+if(debounceButton2(buttonState2) == HIGH && buttonState2 == LOW)
+  {
+    min++;
+    buttonState2 = HIGH;
+  }
+  else if(debounceButton2(buttonState2) == LOW && buttonState2 == HIGH)
+  {
+       buttonState2 = LOW;
+       
+  }
+
+  if(debounceButton(buttonState) == HIGH && buttonState == LOW)
+  {
+    
+    buttonState = HIGH;
+    break;
+  }
+  else if(debounceButton(buttonState) == LOW && buttonState == HIGH)
+  {
+       buttonState = LOW;
+    }
+      
+
+ }
+  
+  }
+
+void setHour(){
+  
+  while(true){
+    
+
+  buttonState2 = digitalRead(10);
+  
+lcd.setCursor(0,0);
+if(PM_control == 1){
+  if(hour>=12){
+    lcd.print("PM");
+    }
+  else{
+    lcd.print("AM");
+    }  
+  }
+ else{
+  lcd.print(" ");
+  
+  }
+lcd.setCursor(6,1);
+ if(sec<10)lcd.print("0");
+
+lcd.setCursor(7,1);
+if(sec<10)lcd.print(sec);
+lcd.setCursor(6,1);
+if(sec>=10)lcd.print(sec);
+
+lcd.setCursor(3,1);
+ if(min<10)lcd.print("0");
+
+lcd.setCursor(4,1);
+if(min<10)lcd.print(min);
+lcd.setCursor(3,1);
+if(min>=10)lcd.print(min);
+
+lcd.setCursor(5,1);
+lcd.print(":");
+
+lcd.setCursor(0,1);
+ if(hour<10&&PM_control==0)lcd.print("0");
+lcd.setCursor(1,1);
+if(hour<10&&PM_control==0)lcd.print(hour);
+lcd.setCursor(0,1);
+if(hour>=10&&PM_control==0)lcd.print(hour);
+
+
+
+lcd.setCursor(0,1);
+if(hour-12<10 && PM_control==1&&hour-12>0)lcd.print("0");
+lcd.setCursor(1,1);
+if(hour-12<10 && PM_control==1&&hour-12>0)lcd.print(hour-12);
+lcd.setCursor(0,1);
+if(hour-12 >= 10 && PM_control==1 &&hour-12>0)lcd.print(hour-12);
+
+
+lcd.setCursor(0,1);
+if(hour<10 && PM_control==1&&hour-12<0 &&hour != 0)lcd.print("0");
+lcd.setCursor(1,1);
+if(hour<10 && PM_control==1&&hour-12<0&&hour != 0)lcd.print(hour);
+lcd.setCursor(0,1);
+if(hour >= 10 && PM_control==1 &&hour-12<=0)lcd.print(hour);
+lcd.setCursor(0,1);
+if(hour<10 && PM_control==1&&hour-12<0&&hour==0)lcd.print(12);
+
+
+lcd.setCursor(2,1);
+lcd.print(":");
+lcd.setCursor(1,1);
+lcd.cursor();
+delay(90);
+lcd.setCursor(1, 1);
+lcd.noCursor();
+delay(90);
+
+
+if(debounceButton2(buttonState2) == HIGH && buttonState2 == LOW)
+  {
+    hour++;
+    buttonState = HIGH;
+  }
+  else if(debounceButton2(buttonState2) == LOW && buttonState2 == HIGH)
+  {
+       buttonState2 = LOW;
+       
+  }
+      
+    if(debounceButton(buttonState) == HIGH && buttonState == LOW)
+  {
+    
+    buttonState = HIGH;
+    break;
+  }
+  else if(debounceButton(buttonState) == LOW && buttonState == HIGH)
+  {
+       buttonState = LOW;
+    }
+
+    
+ }
+  
+  
+  
+  
+  }
+
+    
+
+
+
+
+    
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void loop()
+{
+
+
+setPM_AM();
+unsigned long currentMillis2 = millis();
+  
+  if(buttonState3 == HIGH && programState2 == 0){
+    buttonMillis2= currentMillis2; 
+    programState2 = 1;   
+  }
+  else if(buttonState3 == LOW && programState2==1){
+   programState2 = 0; //if released early
+  }
+  
+  if(currentMillis2-buttonMillis2>intervalButton && programState2==1){
+    programState2 = 2; //successfully held for 3 seconds
+    ledMillis2= currentMillis2;  
+  
+  setAl_min();
+  setAl_hour();
+  
+    
+  }
+  
+  if(currentMillis2 - ledMillis2 > intervalLed && programState2==2){
+    programState2 =0;
+
+  }
+
+
+
+
+if(debounceButton3(buttonState3) == HIGH && buttonState3 == LOW)
+  {
+    if(al_control == 0){
+      al_control =1;
+      
+      }
+
+      else{
+        al_control =0;
+        }
+    
+    buttonState3 = HIGH;
+  
+  }
+  else if(debounceButton3(buttonState3) == LOW && buttonState3 == HIGH)
+  {
+       buttonState3 = LOW;
+    }
+
+  
+  
+ lcd.setCursor(0,3);
+ lcd.print("Alarm ");
+
+ lcd.setCursor(10,3);
+ if(al_min<10)lcd.print("0");
+
+lcd.setCursor(11,3);
+if(al_min<10)lcd.print(al_min);
+lcd.setCursor(10,3);
+if(al_min>=10)lcd.print(al_min);
+
+
+
+lcd.setCursor(7,3);
+ if(al_hour<10)lcd.print("0");
+
+lcd.setCursor(8,3);
+if(al_hour<10)lcd.print(al_hour);
+lcd.setCursor(7,3);
+if(al_hour>=10)lcd.print(al_hour);
+
+lcd.setCursor(9,3);
+lcd.print(":");
+
+
+  ///////////////////////////////////////////////////////////////////////////////
+
+  
+set_temp();
+lcd.setCursor(10,1);
+lcd.print("T=");
+
+
+lcd.setCursor(12,1);
+lcd.print(digital_sicaklik);
+lcd.setCursor(14,1);
+if(temp_control==0) lcd.print("C");  
+else lcd.print("F");
+  buttonState3 = digitalRead(buttonPin3);
+  buttonState = digitalRead(buttonPin);
+  buttonState4 = digitalRead(buttonPin4);
+ 
+ unsigned long currentMillis = millis();
+
+
+
+
+  ////////////////////////////////////////////////////////////////
+  if(buttonState == HIGH && programState == 0){
+    buttonMillis= currentMillis; 
+    programState = 1;   
+  }
+  else if(buttonState == LOW && programState==1){
+   programState = 0; //if released early
+  }
+  
+  if(currentMillis-buttonMillis>intervalButton && programState==1){
+    programState = 2; //successfully held for 3 seconds
+
+    ledMillis= currentMillis;  
+     setMin();
+     setHour();
+  
+
+
+
+
+ //pressed =0;
+
+ 
+  
+  }
+  
+  if(currentMillis - ledMillis > intervalLed && programState==2){
+    programState =0;
+  
+  }
+
+
+  
+ /////////////////////////////////////////////////////////
+
+
+
+lcd.setCursor(6,1);
+ if(sec<10)lcd.print("0");
+
+lcd.setCursor(7,1);
+if(sec<10)lcd.print(sec);
+lcd.setCursor(6,1);
+if(sec>=10)lcd.print(sec);
+
+lcd.setCursor(3,1);
+ if(min<10)lcd.print("0");
+
+lcd.setCursor(4,1);
+if(min<10)lcd.print(min);
+lcd.setCursor(3,1);
+if(min>=10)lcd.print(min);
+
+lcd.setCursor(5,1);
+lcd.print(":");
+
+lcd.setCursor(0,1);
+ if(hour<10&&PM_control==0)lcd.print("0");
+lcd.setCursor(1,1);
+if(hour<10&&PM_control==0)lcd.print(hour);
+lcd.setCursor(0,1);
+if(hour>=10&&PM_control==0)lcd.print(hour);
+
+
+
+lcd.setCursor(0,1);
+ if(hour<10&&PM_control==0)lcd.print("0");
+lcd.setCursor(1,1);
+if(hour<10&&PM_control==0)lcd.print(hour);
+lcd.setCursor(0,1);
+if(hour>=10&&PM_control==0)lcd.print(hour);
+
+
+
+lcd.setCursor(0,1);
+if(hour-12<10 && PM_control==1&&hour-12>0 )lcd.print("0");
+lcd.setCursor(1,1);
+if(hour-12<10 && PM_control==1&&hour-12>0 )lcd.print(hour-12);
+lcd.setCursor(0,1);
+if(hour-12 >= 10 && PM_control==1 &&hour-12>0 )lcd.print(hour-12);
+
+
+lcd.setCursor(0,1);
+if(hour<10 && PM_control==1&&hour-12<0 &&hour != 0)lcd.print("0");
+lcd.setCursor(1,1);
+if(hour<10 && PM_control==1&&hour-12<0&&hour != 0)lcd.print(hour);
+lcd.setCursor(0,1);
+if(hour >= 10 && PM_control==1 &&hour-12<=0&&hour != 0)lcd.print(hour);
+lcd.setCursor(0,1);
+if(hour<10 && PM_control==1&&hour-12<0&&hour==0)lcd.print(12);
+
+
+
+lcd.setCursor(0,0);
+if(PM_control == 1){
+  if(hour>=12){
+    lcd.print("PM");
+    }
+  else{
+    lcd.print("AM");
+    }  
+  }
+ else{
+  lcd.print("  ");
+  
+  }
+  
+  
+ 
+
+
+lcd.setCursor(2,1);
+lcd.print(":");
+if(al_control == 1){
+
+    lcd.setCursor(12,3);
+    lcd.print("'");
+
+    }
+    else{
+    lcd.setCursor(12,3);
+    lcd.print(" ");  
+      }
+
+    if(al_control == 1 && al_hour == hour && al_min == min){
+      
+    
+    tone(buzzerPin, 262);
+    delay(500);
+    noTone(buzzerPin);
+    delay(500);
+
+    if(debounceButton(buttonState) == HIGH && buttonState == LOW)
+  {
+    
+    buttonState = HIGH;
+    al_min = al_min+5;
+  }
+  else if(debounceButton(buttonState) == LOW && buttonState == HIGH)
+  {
+       buttonState = LOW;
+    }
+      }
+     
+
+}
+
+
+ ISR(TIMER1_COMPA_vect){
+  sec++;
+  if(sec>=60){
+   min++;
+   sec=0;
+      
+  }
+  if(min>=60){
+   hour++;
+   min=0;
+  }
+  if(hour>=24){
+   hour=0; 
+  }
+  if(al_min>=60){
+   al_hour++;
+   al_min=0;
+  }
+  if(al_hour>=24){
+   al_hour=0; 
+  }
+  
+}
